@@ -27,7 +27,10 @@ def main() -> int:
     ok &= check("manifest has pbp_lite", "pbp_lite" in man["datasets"], True)
 
     url = f"{base}/pbp/play_by_play_2022.parquet"
-    r = requests.get(url, headers={"Range": "bytes=0-3"}, timeout=30)
+    # Browsers send Accept-Encoding: identity on any request with a Range
+    # header (Fetch standard). GitHub Pages gzips octet-stream otherwise, and
+    # ranges then index into the gzip stream, so test the browser behaviour.
+    r = requests.get(url, headers={"Range": "bytes=0-3", "Accept-Encoding": "identity"}, timeout=30)
     ok &= check("range request status", r.status_code, 206)
     ok &= check("parquet magic", r.content, b"PAR1")
     ok &= check("accept-ranges", r.headers.get("accept-ranges"), "bytes")
